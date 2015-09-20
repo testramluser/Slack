@@ -1,0 +1,41 @@
+var invariant = require('invariant');
+var exists = function (v) { return (v != null); };
+var globalEmptyOpt;
+var Opt = (function () {
+    function Opt(_value) {
+        var _this = this;
+        this._value = _value;
+        this._isDefined = false;
+        this._isEmpty = true;
+        this._arr = undefined;
+        this.getOrThrow = function () {
+            invariant(_this._isDefined, 'Opt is empty. Use `Opt#getOrElse` or check `Opt#isDefined`.');
+            return _this._value;
+        };
+        this.value = function () { return _this._value; };
+        this.isDefined = function () { return _this._isDefined; };
+        this.isEmpty = function () { return _this._isEmpty; };
+        this.toArray = function () { return _this._arr || (_this._arr = _this._isDefined ? [_this._value] : []); };
+        this.getOrElse = function (v) { return _this._isDefined ? _this._value : v; };
+        this.getOrElseF = function (v) { return _this._isDefined ? _this._value : v(); };
+        this.map = function (f) { return _this._isEmpty ? Opt.empty() : new Opt(f(_this._value)); };
+        this.flatMap = function (f) { return _this.map(f).getOrElse(Opt.empty()); };
+        this.equals = function (other) {
+            invariant(other instanceof Opt, 'Expected other to be an `Opt`, but got `%s`', typeof other);
+            return (_this._isDefined === other.isDefined()) && (_this._value === other.value());
+        };
+        if (exists(this._value)) {
+            this._isDefined = true;
+            this._isEmpty = false;
+        }
+    }
+    Opt.prototype.forEach = function (fn) {
+        if (this.isDefined()) {
+            fn(this._value);
+        }
+    };
+    Opt.empty = function () { return (globalEmptyOpt || (globalEmptyOpt = new Opt())); };
+    return Opt;
+})();
+module.exports = Opt;
+//# sourceMappingURL=Opt.js.map

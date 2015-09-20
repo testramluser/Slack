@@ -1,0 +1,64 @@
+<!doctype html>
+<html>
+<head>
+    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+    <script src="https://cdn.firebase.com/js/client/1.0.18/firebase.js"></script>
+    <script src="../../dist/radioactive.js"></script>
+    <script src="./radioactive-firebase.js"></script>
+    <script>
+
+        var OPENEXCHANGERATES_APP_ID = '4a363014b909486b8f49d967b810a6c3'
+
+        // This example shows how easy it is to combine multiple async services
+        // even when one of them is reactive
+        function rate( code ){ return radioactive.data('https://openexchangerates.org/api/latest.json?app_id=' + OPENEXCHANGERATES_APP_ID + '&callback=?')().rates[code] }
+        function currencies(){ return radioactive.data('https://openexchangerates.org/api/currencies.json?app_id=' + OPENEXCHANGERATES_APP_ID + '&callback=?')() }
+
+        // lets get the exchange rate for bitcoin in real time from firebase
+        // https://www.firebase.com/docs/open-data/cryptocurrencies.html
+        var bitcoinLast  = radioactive.data("https://publicdata-cryptocurrency.firebaseio.com/bitcoin/last")
+
+        // the state of the app
+        var defaultCurrency  = "USD"
+        var selectedCurrency = radioactive.cell( defaultCurrency )
+
+
+        function content(){
+            return "1 BTC = " + ( bitcoinLast() * rate(selectedCurrency())) + " " + selectedCurrency()
+        }
+
+
+        // UI
+        $(function(){
+
+            radioactive.react(function(){
+                var c = currencies()
+                var select = $("<select>").on("change", function(){
+                    selectedCurrency(select.val())
+                })
+                Object.keys(c).forEach( function(code){
+                    select.append(
+                            $("<option>")
+                                .attr("value", code)
+                                .attr("selected", code == defaultCurrency )
+                                .text(c[code]) );
+                });
+                $("body").append( select )
+            })
+
+            radioactive.react(function(){
+                if ( radioactive.pending( content ) ){
+                    $("#content").text( "loading..." );
+                } else {
+                    $("#content").text( content() );
+                }
+            })
+
+        })
+
+    </script>
+</head>
+<body>
+<p id="content"></p>
+</body>
+</html>
